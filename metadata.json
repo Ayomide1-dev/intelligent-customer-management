@@ -1,0 +1,7 @@
+{
+  "name": "SmartEnquiry CRM",
+  "description": "Intelligent multi-channel CRM for African businesses to capture, understand, respond, and follow up on customer enquiries.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
