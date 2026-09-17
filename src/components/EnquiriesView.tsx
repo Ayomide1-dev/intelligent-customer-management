@@ -10,6 +10,7 @@ import {
   Clock,
   Sparkles,
   Calendar,
+  CalendarCheck,
   User as UserIcon,
 } from 'lucide-react';
 import { Enquiry, Channel, EnquiryStatus, EnquiryPriority, User } from '../types';
@@ -353,6 +354,15 @@ export function EnquiriesView({
                           <Reply className="w-3.5 h-3.5" />
                           <span className="hidden sm:inline">AI Reply</span>
                         </button>
+                        {onScheduleFollowUp && (
+                          <button
+                            onClick={() => onScheduleFollowUp(enquiry)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                            title="Schedule Follow-up"
+                          >
+                            <CalendarCheck className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => onSelectEnquiry(enquiry)}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"

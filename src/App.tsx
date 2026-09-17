@@ -158,9 +158,14 @@ export default function App() {
     loadData();
   };
 
-  const handleNotificationClick = (notif: Notification) => {
-    if (notif.enquiry_id) {
-      const found = enquiries.find((e) => e.id === notif.enquiry_id);
+  const handleNotificationClick = (notif: any) => {
+    if (notif.link_type === 'followup' || notif.title?.toLowerCase().includes('follow-up')) {
+      setCurrentView('followups');
+      return;
+    }
+    const enquiryId = notif.enquiry_id || notif.link_id;
+    if (enquiryId) {
+      const found = enquiries.find((e) => e.id === enquiryId);
       if (found) {
         setSelectedEnquiryForDetail(found);
       }
@@ -201,7 +206,10 @@ export default function App() {
           <Sidebar
             currentView={currentView}
             onSelectView={(view) => {
-              setCurrentView(view);
+              let normalized = view;
+              if (view === 'follow-ups') normalized = 'followups';
+              if (view === 'ai-assistant') normalized = 'ai_assistant';
+              setCurrentView(normalized);
               setIsMobileMenuOpen(false);
             }}
             enquiriesCount={enquiries.filter((e) => e.status === 'New').length}
@@ -280,7 +288,7 @@ export default function App() {
                   />
                 )}
 
-                {currentView === 'followups' && (
+                {(currentView === 'followups' || currentView === 'follow-ups') && (
                   <FollowUpsView
                     followUps={followUps}
                     staffMembers={team}
@@ -293,7 +301,7 @@ export default function App() {
                   />
                 )}
 
-                {currentView === 'ai_assistant' && (
+                {(currentView === 'ai_assistant' || currentView === 'ai-assistant') && (
                   <AIAssistantView
                     enquiries={enquiries}
                     customers={customers}

@@ -1108,7 +1108,12 @@ class Database {
     }
 
     this.saveData();
-    return newFollowUp;
+    return {
+      ...newFollowUp,
+      customer: this.getCustomer(newFollowUp.customer_id),
+      enquiry: this.data.enquiries.find((e) => e.id === newFollowUp.enquiry_id),
+      assigned_user: this.getUser(newFollowUp.assigned_to),
+    };
   }
 
   public updateFollowUp(id: string, updates: Partial<FollowUp>): FollowUp | undefined {
@@ -1122,7 +1127,13 @@ class Database {
       this.data.follow_ups[index].completed_at = new Date().toISOString();
     }
     this.saveData();
-    return this.data.follow_ups[index];
+    const fol = this.data.follow_ups[index];
+    return {
+      ...fol,
+      customer: this.getCustomer(fol.customer_id),
+      enquiry: this.data.enquiries.find((e) => e.id === fol.enquiry_id),
+      assigned_user: this.getUser(fol.assigned_to),
+    };
   }
 
   // Notes

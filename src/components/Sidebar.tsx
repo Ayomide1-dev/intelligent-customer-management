@@ -140,8 +140,8 @@ export function Sidebar({
           const Icon = item.icon;
           const isActive =
             activeTab === item.id ||
-            (item.id === 'follow-ups' && activeTab === 'followups') ||
-            (item.id === 'ai-assistant' && activeTab === 'ai_assistant');
+            (item.id === 'follow-ups' && (activeTab === 'followups' || activeTab === 'follow-ups')) ||
+            (item.id === 'ai-assistant' && (activeTab === 'ai_assistant' || activeTab === 'ai-assistant'));
           return (
             <button
               key={item.id}

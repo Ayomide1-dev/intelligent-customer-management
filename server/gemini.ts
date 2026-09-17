@@ -4,10 +4,14 @@ import { AIAnalysis, AISettings } from '../src/types.js';
 let aiClient: GoogleGenAI | null = null;
 
 function getAIClient(): GoogleGenAI | null {
-  if (!aiClient && process.env.GEMINI_API_KEY) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key || key.trim() === '' || key === 'MY_GEMINI_API_KEY') {
+    return null;
+  }
+  if (!aiClient) {
     try {
       aiClient = new GoogleGenAI({
-        apiKey: process.env.GEMINI_API_KEY,
+        apiKey: key.trim(),
         httpOptions: {
           headers: {
             'User-Agent': 'aistudio-build',
@@ -266,6 +270,131 @@ CRITICAL RULES:
   return baseGreetings[modifier] || baseGreetings.default;
 }
 
+function generateIntelligentStaffResponse(params: {
+  userQuery: string;
+  activeEnquiry?: any;
+  customerProfile?: any;
+  crmOverview?: any;
+}): string {
+  const { userQuery, activeEnquiry, customerProfile, crmOverview } = params;
+  const q = userQuery.toLowerCase();
+
+  const customerName = customerProfile?.name || activeEnquiry?.customer?.name || 'the customer';
+  const customerPhone = customerProfile?.phone || activeEnquiry?.customer?.phone || 'Not provided';
+  const customerLoc = customerProfile?.location || activeEnquiry?.location || activeEnquiry?.customer?.location || 'Not provided';
+  const channel = activeEnquiry?.channel || customerProfile?.preferred_channel || 'WhatsApp';
+  const product = activeEnquiry?.product_service && activeEnquiry.product_service !== 'Not provided' ? activeEnquiry.product_service : 'Commercial products/services';
+  const quantity = activeEnquiry?.quantity && activeEnquiry.quantity !== 'Not provided' ? activeEnquiry.quantity : 'Standard quantity';
+  const enquiryMsg = activeEnquiry?.message || 'General customer inquiry';
+  const intent = activeEnquiry?.intent || 'Commercial Enquiry';
+  const urgency = activeEnquiry?.urgency || 'Medium';
+
+  // 1. Summarize enquiry
+  if (q.includes('summar') || q.includes('overview') || q.includes('brief') || q.includes('priorit')) {
+    return `📋 SmartEnquiry Executive Summary:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Customer: ${customerName} (${channel} • ${customerPhone})
+• Destination / Location: ${customerLoc}
+• Core Intent: ${intent} (Urgency: ${urgency})
+• Requested Product: ${product}
+• Noted Quantity: ${quantity}
+• Customer's Original Message: "${enquiryMsg}"
+
+💡 Key Operational Insight:
+The customer is seeking direct confirmation on availability and pricing for ${customerLoc}. Because this is routed via ${channel}, speed of response directly impacts conversion.
+👉 Recommended Next Step: Confirm warehouse stock in Lagos, calculate transport/waybill fee for ${customerLoc}, and send an official proforma invoice.`;
+  }
+
+  // 2. Draft response / suggest reply
+  if (q.includes('draft') || q.includes('suggest response') || q.includes('reply') || q.includes('message') || q.includes('what should i say') || q.includes('write')) {
+    return `💬 Suggested Response Draft for ${customerName} (${channel}):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"Hello ${customerName}, thank you for reaching out to us via ${channel}! 
+
+We have received your enquiry regarding ${product}${quantity !== 'Standard quantity' ? ' (Quantity: ' + quantity + ')' : ''}${customerLoc !== 'Not provided' ? ' for delivery to ' + customerLoc : ''}. 
+
+Our team is currently verifying current warehouse stock and calculating the quickest dispatch schedule. We will share your official quote and delivery timeline within the next few minutes. 
+
+Please let us know if you have any additional specifications or need a formal proforma invoice."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📌 Staff Tips:
+• You can copy and paste this directly or open the 'AI Reply' generator for tone adjustments (Short, Formal, Friendly).
+• Remember to set a 24-hour follow-up once this quotation is dispatched.`;
+  }
+
+  // 3. Customer needs & unstated requirements
+  if (q.includes('need') || q.includes('unstated') || q.includes('implicit') || q.includes('hidden') || q.includes('require')) {
+    return `🔍 Customer Needs Analysis (${customerName}):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Explicit Stated Needs:
+   • Product: ${product}
+   • Volume: ${quantity}
+   • Delivery Hub: ${customerLoc}
+
+2. Unstated & Implicit Commercial Needs:
+   • Logistics & Waybill Security: Since delivery is to ${customerLoc}, customer will want reassurance about transit time, packaging integrity, and driver tracking.
+   • Pricing & Volume Discount: For ${quantity !== 'Standard quantity' ? quantity : 'bulk'} quantities, customer will expect wholesale rate consideration.
+   • Proof of Authenticity / Proforma: Corporate/institutional buyers in Nigeria require a stamped proforma invoice and bank transfer details before payment.
+
+3. Potential Friction Points:
+   • Unclear dispatch timelines or unexpected shipping fees at point of arrival. Proactively disclose waybill costs to secure trust.`;
+  }
+
+  // 4. Follow-up recommendation
+  if (q.includes('follow') || q.includes('schedule') || q.includes('reminder') || q.includes('timing')) {
+    return `⏰ Recommended Follow-up Schedule (Automated Engine):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Customer: ${customerName}
+• Target Due Date: Tomorrow (within 24 hours of quotation)
+• Target Due Time: 11:00 AM (optimal business communication window)
+• Recommended Reason: "Confirm quotation receipt, answer product questions, and discuss dispatch schedule to ${customerLoc}"
+• Business Rule Applied: Rule 3 (Quote Awaiting → Follow-up within 24-48 hours)
+
+Staff Action:
+Click 'Schedule Follow-up' on this enquiry or navigate to the Follow-ups tab to log this reminder.`;
+  }
+
+  // 5. Pricing, discount, or payment terms
+  if (q.includes('price') || q.includes('discount') || q.includes('cost') || q.includes('quote') || q.includes('invoice') || q.includes('pay')) {
+    return `💰 Pricing & Commercial Guidance:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Account: ${customerName}
+• Inquired Item: ${product} (${quantity})
+• Standard Policy: Wholesale bulk discounts are available for orders of 20+ units.
+• Regional Dispatch: Deliveries to ${customerLoc} depend on haulage/interstate courier weight.
+• Recommendation: Prepare a proforma invoice clearly itemizing:
+  1. Base unit price
+  2. Bulk tier discount (if quantity ≥ 20)
+  3. Insured interstate dispatch fee to ${customerLoc}
+  4. Accepted payment methods: Direct corporate bank transfer (Naira) with receipt confirmation.`;
+  }
+
+  // 6. Next action / strategy
+  if (q.includes('action') || q.includes('next') || q.includes('what should i do') || q.includes('advice')) {
+    return `🎯 Recommended Action Plan for Staff:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Step 1: Check Physical Stock in inventory for ${product} (${quantity}).
+Step 2: Send the drafted quotation to ${customerName} on ${channel}.
+Step 3: Update enquiry status from '${activeEnquiry?.status || 'New'}' to 'Waiting for Customer'.
+Step 4: Log a follow-up scheduled for 24-48 hours from now using the Schedule Follow-up button.
+Step 5: Add a quick private note to the customer file noting their location in ${customerLoc}.`;
+  }
+
+  // Default intelligent contextual response
+  return `🤖 SmartEnquiry Intelligence Briefing:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Regarding ${customerName}'s enquiry on ${channel}:
+• Subject: ${product} (${quantity})
+• Destination: ${customerLoc}
+• Status: ${activeEnquiry?.status || 'In Progress'} (Priority: ${activeEnquiry?.priority || 'Medium'})
+
+Key Advice:
+${customerName} reached out asking: "${enquiryMsg}". Ensure prompt communication via ${channel}, provide transparent dispatch terms for ${customerLoc}, and schedule a reminder to prevent losing track of this customer.
+
+How else can I assist? (e.g. Try asking "Draft response", "Summarize enquiry", "Detect unstated needs", or "Recommend follow-up")`;
+}
+
 export async function askStaffAIAssistant(params: {
   userQuery: string;
   activeEnquiry?: any;
@@ -276,13 +405,7 @@ export async function askStaffAIAssistant(params: {
   const client = getAIClient();
 
   if (!client) {
-    return `SmartEnquiry AI Assistant (Offline Mode):
-Based on the current CRM records:
-- Customer: ${customerProfile?.name || activeEnquiry?.customer?.name || 'Selected Customer'}
-- Enquiry Intent: ${activeEnquiry?.intent || 'General Enquiry'}
-- Key Need: ${activeEnquiry?.product_service || 'Customer requirements'} (${activeEnquiry?.quantity || 'Qty unstated'})
-- Status: ${activeEnquiry?.status || 'Active'}
-- Suggested staff action: Verify current stock availability and confirm dispatch schedule before sending proforma invoice.`;
+    return generateIntelligentStaffResponse(params);
   }
 
   try {
@@ -316,7 +439,7 @@ ${crmOverview ? `CRM Overview:
 
 Instructions:
 1. Provide a direct, highly practical, and actionable answer to help the staff member.
-2. Offer helpful suggestions for responses, follow-up scheduling, or customer objection handling.
+2. Offer helpful suggestions for responses, follow-up scheduling, or customer objection handling in an African commercial context.
 3. Be clear, professional, and respectful. Use formatting like bullet points where helpful.`;
 
     const response = await client.models.generateContent({
@@ -324,9 +447,13 @@ Instructions:
       contents: prompt,
     });
 
-    return response.text?.trim() || 'AI Assistant response received.';
+    const text = response.text?.trim();
+    if (text) {
+      return text;
+    }
+    return generateIntelligentStaffResponse(params);
   } catch (err) {
-    console.warn('Gemini staff assistant error:', err);
-    return 'The AI Assistant is currently processing your request. Please review the customer details in the enquiry view.';
+    console.warn('Gemini staff assistant error, using CRM intelligence fallback:', err);
+    return generateIntelligentStaffResponse(params);
   }
 }

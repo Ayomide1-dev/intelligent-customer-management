@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   CalendarCheck,
+  Calendar,
   Plus,
   Clock,
   CheckCircle2,
@@ -38,13 +39,20 @@ export function FollowUpsView({
     if (selectedStatus !== 'All' && f.status !== selectedStatus) return false;
     if (selectedStaff !== 'All' && f.assigned_to !== selectedStaff) return false;
     if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const matchCustomer = f.customer?.name.toLowerCase().includes(q);
-      const matchReason = f.reason.toLowerCase().includes(q);
-      if (!matchCustomer && !matchReason) return false;
+      const q = searchQuery.toLowerCase().trim();
+      const matchCustomer = (f.customer?.name || '').toLowerCase().includes(q);
+      const matchPhone = (f.customer?.phone || '').toLowerCase().includes(q);
+      const matchReason = (f.reason || '').toLowerCase().includes(q);
+      const matchNotes = (f.notes || '').toLowerCase().includes(q);
+      if (!matchCustomer && !matchPhone && !matchReason && !matchNotes) return false;
     }
     return true;
   });
+
+  const dueTodayCount = followUps.filter((f) => f.status === 'Due Today').length;
+  const overdueCount = followUps.filter((f) => f.status === 'Overdue').length;
+  const pendingCount = followUps.filter((f) => f.status === 'Pending').length;
+  const completedCount = followUps.filter((f) => f.status === 'Completed').length;
 
   const handleMarkDone = async (id: string) => {
     try {
@@ -85,6 +93,77 @@ export function FollowUpsView({
         >
           <Plus className="w-4 h-4" />
           <span>Schedule Follow-up</span>
+        </button>
+      </div>
+
+      {/* Quick Status Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <button
+          type="button"
+          onClick={() => setSelectedStatus(selectedStatus === 'Due Today' ? 'All' : 'Due Today')}
+          className={`p-4 rounded-2xl border text-left transition-all ${
+            selectedStatus === 'Due Today'
+              ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 ring-2 ring-amber-400/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-amber-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">Due Today</span>
+            <Clock className="w-4 h-4 text-amber-500" />
+          </div>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{dueTodayCount}</p>
+          <span className="text-[10px] text-slate-400">Scheduled for today</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSelectedStatus(selectedStatus === 'Overdue' ? 'All' : 'Overdue')}
+          className={`p-4 rounded-2xl border text-left transition-all ${
+            selectedStatus === 'Overdue'
+              ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-400 ring-2 ring-rose-400/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-rose-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">Overdue</span>
+            <AlertCircle className="w-4 h-4 text-rose-500" />
+          </div>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{overdueCount}</p>
+          <span className="text-[10px] text-slate-400">Requires urgent touch</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSelectedStatus(selectedStatus === 'Pending' ? 'All' : 'Pending')}
+          className={`p-4 rounded-2xl border text-left transition-all ${
+            selectedStatus === 'Pending'
+              ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-400 ring-2 ring-blue-400/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">Upcoming</span>
+            <Calendar className="w-4 h-4 text-blue-500" />
+          </div>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{pendingCount}</p>
+          <span className="text-[10px] text-slate-400">Pending future dates</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSelectedStatus(selectedStatus === 'Completed' ? 'All' : 'Completed')}
+          className={`p-4 rounded-2xl border text-left transition-all ${
+            selectedStatus === 'Completed'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 ring-2 ring-emerald-400/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Completed</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          </div>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{completedCount}</p>
+          <span className="text-[10px] text-slate-400">Successfully handled</span>
         </button>
       </div>
 
